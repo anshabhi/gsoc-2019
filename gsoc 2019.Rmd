@@ -1,0 +1,191 @@
+---
+title: "RBerkeley functions demonstration"
+author: "Abhinav Agarwal"
+date: "11 March 2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Introduction
+This document describes the functions supported by RBerkeley API for BerkeleyDB. This is also my submission for GSoC 2019 project, aimed at bringing RBerkeley back to CRAN Repository. 
+All the functions are listed in alphabetical order, with their demo usage.
+No description has been provided for any function, as it would be more appropriate to refer to BerkeleyDB C API for that.
+
+Loading the API:
+```{r}
+library(RBerkeley)
+db_version()
+```
+
+
+### BerkeleyDB Database Operations and Methods
+
+#### db_create
+```{r}
+dbh<-db_create()
+dbh
+```
+
+#### db_open
+Mask for DB->open() in C API
+```{r}
+db_open(dbh)
+```
+
+#### db_put
+Mask for DB->put()	in C API
+```{r}
+db_put(dbh, key="abc", data="def")
+db_put(dbh, key="123", data="456") #Automatically serialized by R
+
+```
+
+#### db_get
+Mask for DB->get() in C API
+```{r}
+db_get(dbh, key="abc") #Output in serialized format
+unserialize(db_get(dbh, key="abc")) #Output in unserialized format
+```
+
+#### db_compact
+Mask for DB->compact() in C API. Unfortunately, there seems to be some error in the implementation of this function, as R session crashes everytime I try to execute it. The function is not executed here.
+```{r eval=FALSE}
+db_compact(dbh)
+```
+
+#### db_del & db_exists
+
+Mask for Db::del() & DB->exists() in C API
+ 
+```{r}
+db_strerror(db_exists(dbh, key="abc"))
+db_del(dbh, key="abc")
+db_strerror(db_exists(dbh, key="abc"))
+```
+
+Note: While db_fd() has been mentioned in Documentation, it has not yet been implemented in RBerkeley.
+
+#### db_get_byteswapped
+Maks for Db::get_byteswapped in C API
+```{r eval=FALSE, include=FALSE}
+db_get_byteswapped((dbh)) #Error in db_get_byteswapped((dbh)) : invalid 'db' handle
+```
+Possibly, implementation of this function is missing `as.DB(dbh)`.
+
+#### db_get_type	
+
+Mask for DB->get_type in C API
+
+```{r}
+db_get_type(dbh)
+```
+
+#### db_key_range
+Mask for  DB->key_range in C API.
+
+```{r}
+db_key_range(dbh,key=123)
+```
+#### db_rename
+Mask for DB->rename in C API.
+
+```{r}
+db_get_dbname(dbh)
+
+db_rename(dbh,"access.db","","gsoc")
+db_get_dbname(dbh)
+
+```
+
+
+#### db_cursor
+Mask for DB->cursor() in C API.
+
+```{r}
+dbc <- db_cursor(dbh)
+dbc
+```
+#### dbcursor_put
+Mask for DBcursor->put() in C API.
+```{r}
+dbcursor_put(dbc, key=1000L, data=50L, flags=mkFlags(DB_KEYFIRST))
+```
+
+
+#### dbcursor_count
+Mask for DBcursor->count() in C API.
+```{r}
+dbcursor_count(dbc)
+```
+
+#### dbcursor_get
+Mask for DBcursor->get() in C API
+```{r}
+rs<-dbcursor_get(dbc, key=100,flags=mkFlags(DB_FIRST))
+lapply(rs[[1]], unserialize)
+```
+
+Note: The documentation erroneously mentions `dbcursor_pget` as a method. No such function exists in the API.
+
+#### dbcursor_del
+Mask for DBcursor->del() in C API
+
+
+```{r}
+dbcursor_del(dbc)
+dbcursor_get(dbc, key=100,flags=mkFlags(DB_SET)) #null
+```
+#### dbcursor_dup
+Mask for DBcursor->dup() in C API
+```{r}
+dbc2<-dbcursor_dup(dbc)
+dbc2
+```
+
+#### dbcursor_set_priority & dbcursor_get_priority
+Mask for DBcursor->set_priority() and DBcursor->get_priority() respectively in C API
+
+```{r}
+dbcursor_set_priority(dbc,as.integer(5))
+dbcursor_get_priority(dbc)
+
+```
+Note: dbcursor_get_priority is not mentioned in API documentation
+
+#### dbcursor_close
+Mask for DBcursor->close() in C API
+
+```{r}
+dbcursor_close(dbc)
+```
+
+
+#### db_stat
+
+Mask for DB->stat in C API
+
+```{r}
+db_stat(dbh)
+```
+`db_sync`, `db_upgrade` and `db_truncate` are some other functions which can be implemented in a similar fashion.
+
+#### db_close
+Mask for DB->close() in C API
+```{r}
+db_close(dbh)
+dbh #Error 
+```
+Similarly, `db_rename` and `db_remove` can be used for relevant tasks. 
+
+
+### Conclusion
+
+RBerkeley is a very powerful library, and I would work as hard as I can to see it back on CRAN by addressing the relevant issues.
+
+### References
+
+* RBerkeley documentation and Vignette
+* Oracle Berkeley DB C API
